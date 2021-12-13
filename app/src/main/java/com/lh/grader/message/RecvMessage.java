@@ -8,13 +8,15 @@ import com.lh.grader.util.TimeUtil;
  */
 
 public class RecvMessage implements IMessage {
-    
+
     private String command;
     private String message;
+    private String mName;
 
-    public RecvMessage(String command) {
+    public RecvMessage(String command, String name) {
         this.command = command;
-        this.message = TimeUtil.currentTime() + "    收到命令：" + command;
+        this.message = command;
+        this.mName = name;
     }
 
     @Override
@@ -23,7 +25,13 @@ public class RecvMessage implements IMessage {
     }
 
     @Override
+    public String getName() {
+        return mName;
+    }
+
+    @Override
     public boolean isToSend() {
         return false;
     }
+
 }

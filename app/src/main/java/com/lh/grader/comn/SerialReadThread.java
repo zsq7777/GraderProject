@@ -19,9 +19,11 @@ public class SerialReadThread extends Thread {
     private static final String TAG = "SerialReadThread";
 
     private BufferedInputStream mInputStream;
+    private String mName;
 
-    public SerialReadThread(InputStream is) {
+    public SerialReadThread(InputStream is, String name) {
         mInputStream = new BufferedInputStream(is);
+        this.mName=name;
     }
 
     @Override
@@ -67,7 +69,7 @@ public class SerialReadThread extends Thread {
     private void onDataReceive(byte[] received, int size) {
         // TODO: 2018/3/22 解决粘包、分包等
         String hexStr = ByteUtil.bytes2HexStr(received, 0, size);
-        LogManager.instance().post(new RecvMessage(hexStr));
+        LogManager.instance().post(new RecvMessage(hexStr,mName));
     }
 
     /**

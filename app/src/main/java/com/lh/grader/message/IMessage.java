@@ -18,4 +18,7 @@ public interface IMessage {
      * @return
      */
     boolean isToSend();
+
+
+    String getName();
 }

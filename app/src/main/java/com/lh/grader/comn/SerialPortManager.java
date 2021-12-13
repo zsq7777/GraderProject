@@ -31,19 +31,28 @@ public class SerialPortManager {
     private OutputStream mOutputStream;
     private HandlerThread mWriteThread;
     private Scheduler mSendScheduler;
+    private String mName;
 
     private static class InstanceHolder {
 
-        public static SerialPortManager sManager = new SerialPortManager();
+        public static SerialPortManager sManager = new SerialPortManager("串口1");
+    }
+    private static class InstanceHolder2 {
+
+        public static SerialPortManager sManager = new SerialPortManager("串口2");
     }
 
     public static SerialPortManager instance() {
         return InstanceHolder.sManager;
     }
+    public static SerialPortManager instance2() {
+        return InstanceHolder2.sManager;
+    }
 
     private SerialPort mSerialPort;
 
-    private SerialPortManager() {
+    private SerialPortManager(String name) {
+        this.mName=name;
     }
 
     /**
@@ -73,12 +82,12 @@ public class SerialPortManager {
             int baurate = Integer.parseInt(baudrateString);
             mSerialPort = new SerialPort(device, baurate);
             //创建线程
-            mReadThread = new SerialReadThread(mSerialPort.getInputStream());
+            mReadThread = new SerialReadThread(mSerialPort.getInputStream(),mName);
             mReadThread.start();
 
             mOutputStream = mSerialPort.getOutputStream();
 
-            mWriteThread = new HandlerThread("write-thread");
+            mWriteThread = new HandlerThread("write-thread"+mName);
             mWriteThread.start();
             mSendScheduler = AndroidSchedulers.from(mWriteThread.getLooper());
 
@@ -170,7 +179,7 @@ public class SerialPortManager {
 
             @Override
             public void onNext(Object o) {
-                LogManager.instance().post(new SendMessage(command));
+                LogManager.instance().post(new SendMessage(command,mName));
             }
 
             @Override

@@ -1,5 +1,7 @@
 package com.lh.grader.message;
 
+import android.util.Log;
+
 import org.greenrobot.eventbus.EventBus;
 
 import java.util.ArrayList;
@@ -32,6 +34,7 @@ public class LogManager {
     }
 
     public void post(IMessage message) {
+
         EventBus.getDefault().post(message);
     }
 
@@ -50,5 +53,7 @@ public class LogManager {
     public void changAutoEnd() {
         mAutoEnd = !mAutoEnd;
     }
+
+
 }
 
