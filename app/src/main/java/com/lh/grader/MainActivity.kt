@@ -1,24 +1,25 @@
 package com.lh.grader
 
+import android.content.DialogInterface
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.serialport.SerialPortFinder
 import android.text.TextUtils
 import android.util.Log
 import android.widget.*
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatSpinner
 import androidx.appcompat.widget.SwitchCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.blankj.utilcode.util.AdaptScreenUtils
-import com.blankj.utilcode.util.ScreenUtils
-import com.blankj.utilcode.util.ToastUtils
+import com.blankj.utilcode.util.*
 import com.lh.grader.adapter.DataAdapter
 import com.lh.grader.comn.Device
 import com.lh.grader.comn.SerialPortManager
 import com.lh.grader.message.IMessage
 import com.lh.grader.model.GpsModel
 import com.lh.grader.model.ResultData
+import com.lh.grader.model.SaveModel
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -27,6 +28,9 @@ import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
+import com.tencent.mmkv.MMKV
+import java.lang.reflect.Array
+
 
 class MainActivity : AppCompatActivity() {
     val TAG = javaClass.simpleName
@@ -55,6 +59,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        EventBus.getDefault().register(this)
         ScreenUtils.setFullScreen(this)
         initView()
         //串口开关
@@ -64,7 +69,11 @@ class MainActivity : AppCompatActivity() {
             sendData()
         }
         initRv()
-        EventBus.getDefault().register(this)
+
+        val rootDir = MMKV.initialize(this)
+        Log.i("初始化", rootDir)
+
+
     }
 
     private fun initRv() {
@@ -130,9 +139,9 @@ class MainActivity : AppCompatActivity() {
                 lastData1 = resultData
             } else {
                 mTvChange1.text = "时间：$timeStr\n设备：${resultData.sn}\n" +
-                        "经度-${resultData.gps.longUnit}变化：${(resultData.gps.long)-(lastData1!!.gps.long)}\n" +
-                        "纬度-${resultData.gps.latUnit}变化：${(resultData.gps.lat)-(lastData1!!.gps.lat)}\n" +
-                        "高程变化：${(resultData.gps.altitude)-(lastData1!!.gps.altitude)}"
+                        "经度-${resultData.gps.longUnit}变化：${(resultData.gps.long) - (lastData1!!.gps.long)}\n" +
+                        "纬度-${resultData.gps.latUnit}变化：${(resultData.gps.lat) - (lastData1!!.gps.lat)}\n" +
+                        "高程变化：${(resultData.gps.altitude) - (lastData1!!.gps.altitude)}"
             }
             lastData1 = resultData
         }
@@ -162,14 +171,15 @@ class MainActivity : AppCompatActivity() {
                 lastData2 = resultData
             } else {
                 mTvChange2.text = "时间：$timeStr\n设备：${resultData.sn}\n" +
-                        "经度-${resultData.gps.longUnit}变化：${(resultData.gps.long)-(lastData2!!.gps.long)}\n" +
-                        "纬度-${resultData.gps.latUnit}变化：${(resultData.gps.lat)-(lastData2!!.gps.lat)}\n" +
-                        "高程变化：${(resultData.gps.altitude)-(lastData2!!.gps.altitude)}"
+                        "经度-${resultData.gps.longUnit}变化：${(resultData.gps.long) - (lastData2!!.gps.long)}\n" +
+                        "纬度-${resultData.gps.latUnit}变化：${(resultData.gps.lat) - (lastData2!!.gps.lat)}\n" +
+                        "高程变化：${(resultData.gps.altitude) - (lastData2!!.gps.altitude)}"
             }
 
             lastData2 = resultData
 
         }
+
 
     }
 
@@ -291,6 +301,118 @@ class MainActivity : AppCompatActivity() {
 
         mTvChange1 = findViewById(R.id.tvChange1)
         mTvChange2 = findViewById(R.id.tvChange2)
+
+
+        findViewById<Button>(R.id.saveLog).setOnClickListener {
+            val kv1 = MMKV.defaultMMKV()
+            val kv2 = MMKV.defaultMMKV()
+
+            val data1 = kv1.decodeString("data1")
+            val data2 = kv2.decodeString("data2")
+            if (data1 == null) {
+                val array =
+                    arrayListOf(SaveModel(TimeUtils.getNowString(), mDataAdapter.data))
+
+                kv1.encode("data1", GsonUtils.toJson(array))
+            } else {
+                val array =
+                    GsonUtils.fromJson<ArrayList<SaveModel>>(
+                        data1,
+                        GsonUtils.getListType(SaveModel::class.java)
+                    )
+                array.add(SaveModel(TimeUtils.getNowString(), mDataAdapter.data))
+                kv1.encode("data1", GsonUtils.toJson(array))
+            }
+
+            if (data2 == null) {
+                val array =
+                    arrayListOf(SaveModel(TimeUtils.getNowString(), mDataAdapter2.data))
+
+                kv2.encode("data2", GsonUtils.toJson(array))
+            } else {
+                val array =
+                    GsonUtils.fromJson<ArrayList<SaveModel>>(
+                        data2,
+                        GsonUtils.getListType(SaveModel::class.java)
+                    )
+                array.add(SaveModel(TimeUtils.getNowString(), mDataAdapter2.data))
+                kv2.encode("data2", GsonUtils.toJson(array))
+            }
+            ToastUtils.showShort("日志保存成功")
+
+
+        }
+        findViewById<Button>(R.id.loadLog).setOnClickListener {
+            val kv = MMKV.defaultMMKV()
+
+            val data1 = kv.decodeString("data1")
+            val array1 =
+                GsonUtils.fromJson<ArrayList<SaveModel>>(
+                    data1,
+                    GsonUtils.getListType(SaveModel::class.java)
+                )
+            if(null==array1||array1.size==0){
+                ToastUtils.showShort("暂无日志")
+                return@setOnClickListener
+            }
+            val arrayEmpty = arrayListOf<String>()
+            for (i in array1.indices) {
+                arrayEmpty.add(array1[i].time)
+            }
+            LogUtils.i(arrayEmpty.toString())
+            val array = arrayOfNulls<String>(arrayEmpty.size)
+            for (i in arrayEmpty.indices) {
+                array[i]= arrayEmpty[i]
+            }
+
+            LogUtils.i("array数组",arrayEmpty.toString())
+
+            AlertDialog.Builder(this).setItems(array
+            ) { p0, p1 ->
+                mDataAdapter.setNewData(array1[p1].resultData)
+            }.show()
+        }
+
+        findViewById<Button>(R.id.loadLog2).setOnClickListener {
+            val kv = MMKV.defaultMMKV()
+            val data2 = kv.decodeString("data2")
+            val array2 =
+                GsonUtils.fromJson<ArrayList<SaveModel>>(
+                    data2,
+                    GsonUtils.getListType(SaveModel::class.java)
+                )
+            if(null==array2||array2.size==0){
+                ToastUtils.showShort("暂无日志")
+                return@setOnClickListener
+            }
+            val arrayEmpty = arrayListOf<String>()
+            for (i in array2.indices) {
+                arrayEmpty.add(array2[i].time)
+            }
+            LogUtils.i(arrayEmpty.toString())
+            val array = arrayOfNulls<String>(arrayEmpty.size)
+            for (i in arrayEmpty.indices) {
+                array[i]= arrayEmpty[i]
+            }
+
+
+            AlertDialog.Builder(this).setItems(array
+            ) { p0, p1 ->
+                mDataAdapter2.setNewData(array2[p1].resultData)
+            }.show()
+        }
+
+        findViewById<TextView>(R.id.btnClearAllLog).setOnClickListener {
+            AlertDialog.Builder(this).setNegativeButton("取消"
+            ) { p0, p1 ->
+                p0.cancel()
+            }.setPositiveButton("确定"
+            ) { p0, p1 ->
+                val kv = MMKV.defaultMMKV()
+                kv.clearAll()
+            }.show()
+
+        }
 
     }
 

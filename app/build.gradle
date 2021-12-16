@@ -51,4 +51,8 @@ dependencies {
     implementation 'com.licheedev:hardwareutils:1.0.0'
     implementation 'com.licheedev:logplus:1.0.0'
 
+    //存储
+    implementation 'com.tencent:mmkv:1.2.11'
+
+
 }
