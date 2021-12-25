@@ -30,6 +30,7 @@ import java.util.*
 import kotlin.collections.ArrayList
 import com.tencent.mmkv.MMKV
 import java.lang.reflect.Array
+import java.math.BigDecimal
 
 
 class MainActivity : AppCompatActivity() {
@@ -72,6 +73,8 @@ class MainActivity : AppCompatActivity() {
 
         val rootDir = MMKV.initialize(this)
         Log.i("初始化", rootDir)
+
+
 
 
     }
@@ -170,15 +173,37 @@ class MainActivity : AppCompatActivity() {
             if (lastData2 == null) {
                 lastData2 = resultData
             } else {
+                lateinit  var bigDecimal: BigDecimal
+                try {
+                     bigDecimal = (mDataAdapter.data[mDataAdapter.data.size - 1].gps.altitude) - (mDataAdapter2.data[mDataAdapter2.data.size - 1].gps.altitude)
+
+                }catch (e:Exception){
+                    Log.i(TAG, "onMessageEvent: "+e.localizedMessage.toString())
+                    bigDecimal=BigDecimal(0)
+                }
+
+//                findViewById<TextView>(R.id.tcChangeFirst).text = "变化量\n 高程差值："+bigDecimal.toPlainString()
+
+
                 mTvChange2.text = "时间：$timeStr\n设备：${resultData.sn}\n" +
                         "经度-${resultData.gps.longUnit}变化：${(resultData.gps.long) - (lastData2!!.gps.long)}\n" +
                         "纬度-${resultData.gps.latUnit}变化：${(resultData.gps.lat) - (lastData2!!.gps.lat)}\n" +
-                        "高程变化：${(resultData.gps.altitude) - (lastData2!!.gps.altitude)}"
+                        "高程变化：${(resultData.gps.altitude) - (lastData2!!.gps.altitude)}\n" +
+                        "左右高程差值："+bigDecimal
             }
 
             lastData2 = resultData
 
+//            try {
+
+//            }catch (e:Exception){
+//                Log.i(TAG, "onMessageEvent: "+e.localizedMessage)
+//            }
+
+
         }
+
+
 
 
     }
